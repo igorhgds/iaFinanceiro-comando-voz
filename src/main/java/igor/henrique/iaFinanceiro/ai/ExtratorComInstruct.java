@@ -45,18 +45,12 @@ public class ExtratorComInstruct {
             // Extraindo o valor de "mes"
             int mes = jsonResposta.getInt("mes");
 
-            // Criando o resultado final como um JSON
-            JSONObject resultadoFinal = new JSONObject();
-            resultadoFinal.put("tipo", tipo.toString().toLowerCase());
-            resultadoFinal.put("mes", mes);
+            return "Tipo: " + tipo.toString().toLowerCase() + ", Mes: " + mes;
 
-            // Retornando o JSON como string
-            return resultadoFinal.toString();
         } catch (JSONException e) {
             System.err.println("Erro ao processar JSON: " + e.getMessage());
             return "{}";
         }
-
 
     }
 }
