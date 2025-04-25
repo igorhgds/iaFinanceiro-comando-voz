@@ -45,7 +45,7 @@ function escutarConsulta() {
 }
 
 document.addEventListener("keydown", function (e) {
-    if (e.code === "Space") {
+    if (e.code === "Enter") {
         respostaDiv.textContent = "Faça sua consulta.";
         const utterance = new SpeechSynthesisUtterance("Faça sua consulta.");
         utterance.lang = 'pt-BR';
