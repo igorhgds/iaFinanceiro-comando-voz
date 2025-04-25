@@ -1,0 +1,90 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="pt-br">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Assistente Financeiro por Voz</title>-->
+<!--    <style>-->
+<!--        body { font-family: Arial; text-align: center; padding: 30px; }-->
+<!--        button { padding: 15px 25px; font-size: 18px; cursor: pointer; }-->
+<!--        #texto, #resposta { margin-top: 20px; font-size: 20px; }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<h1>🧠 Assistente Financeiro</h1>-->
+<!--<button onclick="iniciarReconhecimento()">🎙️ Falar com o Assistente</button>-->
+
+<!--<div id="texto"></div>-->
+<!--<div id="resposta"></div>-->
+
+<!--<script>-->
+<!--    const textoDiv = document.getElementById('texto');-->
+<!--    const respostaDiv = document.getElementById('resposta');-->
+
+<!--    function iniciarReconhecimento() {-->
+<!--        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();-->
+<!--        recognition.lang = 'pt-BR';-->
+<!--        recognition.start();-->
+
+<!--        recognition.onresult = async function(event) {-->
+<!--            const resultado = event.results[0][0].transcript;-->
+<!--            textoDiv.textContent = "Você disse: " + resultado;-->
+
+<!--            try {-->
+<!--                const response = await fetch("/consulta?texto=" + encodeURIComponent(resultado));-->
+<!--                const respostaTexto = await response.text();-->
+<!--                respostaDiv.textContent = "Resposta: " + respostaTexto;-->
+
+<!--                const utterance = new SpeechSynthesisUtterance(respostaTexto);-->
+<!--                utterance.lang = 'pt-BR';-->
+<!--                speechSynthesis.speak(utterance);-->
+<!--            } catch (error) {-->
+<!--                respostaDiv.textContent = "Erro ao consultar o assistente.";-->
+<!--                console.error(error);-->
+<!--            }-->
+<!--        };-->
+
+<!--        recognition.onerror = function(event) {-->
+<!--            respostaDiv.textContent = "Erro de voz: " + event.error;-->
+<!--        };-->
+<!--    }-->
+<!--</script>-->
+
+<!--</body>-->
+<!--</html>-->
+
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Assistente Financeiro por Voz</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            padding: 30px;
+        }
+
+        button {
+            padding: 15px 25px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        #texto, #resposta {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🧠 Assistente Financeiro</h1>
+<button onclick="iniciarReconhecimento()">🎙️ Falar com o Assistente</button>
+
+<div id="texto"></div>
+<div id="resposta"></div>
+<script src="voz.js"></script>
+</body>
+</html>
