@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
 
-    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.tipo = :tipo AND FUNCTION('MONTH', t.data) = :mes")
+    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.tipo = :tipo AND EXTRACT(MONTH FROM t.data) = :mes")
     Double somarPorTipoEMes(@Param("tipo") TipoTransacao tipo, @Param("mes") int mes);
 
 }
