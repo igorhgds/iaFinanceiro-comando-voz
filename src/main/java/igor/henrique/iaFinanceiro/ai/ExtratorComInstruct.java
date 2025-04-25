@@ -1,4 +1,4 @@
-package igor.henrique.iaFinanceiro.util;
+package igor.henrique.iaFinanceiro.ai;
 
 
 import com.theokanning.openai.service.OpenAiService;

@@ -1,5 +1,6 @@
 package igor.henrique.iaFinanceiro.util;
 
+import igor.henrique.iaFinanceiro.ai.ResultadoTransacao;
 import igor.henrique.iaFinanceiro.enums.TipoTransacao;
 
 import java.util.Map;
@@ -79,5 +80,15 @@ public class TextoFinanceiroParser {
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse("mês");
+    }
+
+    public static ResultadoTransacao analisarComMap(String texto) {
+        TipoTransacao tipo = extrairTipo(texto);
+        Integer mes = extrairMes(texto);
+
+        ResultadoTransacao r = new ResultadoTransacao();
+        r.setTipo(tipo != null ? tipo.name() : null);
+        r.setMes(mes);
+        return r;
     }
 }
