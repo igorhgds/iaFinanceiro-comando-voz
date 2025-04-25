@@ -1,5 +1,8 @@
 package igor.henrique.iaFinanceiro.service;
 
+import igor.henrique.iaFinanceiro.enums.TipoTransacao;
+import igor.henrique.iaFinanceiro.repository.TransacaoRepository;
+import igor.henrique.iaFinanceiro.util.TextoFinanceiroParser;
 import org.springframework.stereotype.Service;
 
 @Service

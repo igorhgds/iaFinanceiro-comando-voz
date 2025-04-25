@@ -1,5 +1,7 @@
 package igor.henrique.iaFinanceiro.controller;
 
+import igor.henrique.iaFinanceiro.entities.Transacao;
+import igor.henrique.iaFinanceiro.service.TransacaoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -1,5 +1,7 @@
 package igor.henrique.iaFinanceiro.service;
 
+import igor.henrique.iaFinanceiro.entities.Transacao;
+import igor.henrique.iaFinanceiro.repository.TransacaoRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
