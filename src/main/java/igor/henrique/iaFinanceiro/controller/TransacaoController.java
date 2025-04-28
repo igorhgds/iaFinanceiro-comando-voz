@@ -1,33 +1,25 @@
 package igor.henrique.iaFinanceiro.controller;
 
-import igor.henrique.iaFinanceiro.entities.Transacao;
-import igor.henrique.iaFinanceiro.service.TransacaoService;
+import igor.henrique.iaFinanceiro.ai.ExtratorComInstruct;
+import igor.henrique.iaFinanceiro.dtos.transacao.InterpretacaoTransacao;
+import igor.henrique.iaFinanceiro.service.DispatcherService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/transacoes")
+@RequestMapping("/consulta")
 public class TransacaoController {
 
-    private final TransacaoService service;
+    private final DispatcherService dispatcherService;
 
-    public TransacaoController(TransacaoService service) {
-        this.service = service;
-    }
-
-    @PostMapping
-    public ResponseEntity<Transacao> salvar(@RequestBody Transacao transacao) {
-        return ResponseEntity.ok(service.salvar(transacao));
+    public TransacaoController(DispatcherService dispatcherService) {
+        this.dispatcherService = dispatcherService;
     }
 
     @GetMapping
-    public ResponseEntity<List<Transacao>> listar() {
-        return ResponseEntity.ok(service.listar());
+    public ResponseEntity<String> consultar(@RequestParam String texto) {
+        InterpretacaoTransacao interpretacao = ExtratorComInstruct.dadosTransacao(texto);
+        String resposta = dispatcherService.processarConsulta(interpretacao);
+        return ResponseEntity.ok(resposta);
     }
 }

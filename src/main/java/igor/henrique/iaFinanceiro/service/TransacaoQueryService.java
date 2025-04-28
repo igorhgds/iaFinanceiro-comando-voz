@@ -1,78 +1,85 @@
 package igor.henrique.iaFinanceiro.service;
 
-import igor.henrique.iaFinanceiro.ai.ExtratorComInstruct;
-import igor.henrique.iaFinanceiro.ai.ResultadoTransacao;
+import igor.henrique.iaFinanceiro.dtos.transacao.ResumoFinanceiroDTO;
 import igor.henrique.iaFinanceiro.enums.TipoTransacao;
 import igor.henrique.iaFinanceiro.repository.TransacaoRepository;
-import igor.henrique.iaFinanceiro.util.TextoFinanceiroParser;
-import org.json.JSONException;
+import igor.henrique.iaFinanceiro.util.DataFormatter;
 import org.springframework.stereotype.Service;
 
-import org.json.JSONObject;
+import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class TransacaoQueryService {
 
-    private TransacaoRepository repository;
+    private final TransacaoRepository repository;
 
     public TransacaoQueryService(TransacaoRepository repository) {
         this.repository = repository;
     }
 
-    public String interpretarConsulta(String texto) {
-        final String textoLower = texto.toLowerCase();
+    public String faturamentoPorTipoEData(TipoTransacao tipo, LocalDate dataInicio, LocalDate dataFim) {
+        Double valor = repository.somarValorPorTipoEDataEntre(tipo, dataInicio, dataFim);
 
-        // Usando o ChatGPT para extrair os dados (retorna uma string formatada, como "Tipo: entrada, Mes: 4")
-        String resultado = ExtratorComInstruct.dadosTransacao(textoLower);
-        System.out.println("resultado: " + resultado);
-
-        try {
-            // Vamos criar um JSON válido a partir da string formatada "Tipo: entrada, Mes: 4"
-            if (resultado != null && !resultado.isEmpty()) {
-                JSONObject jsonResultado = new JSONObject();
-
-                // Processando a string para extrair os dados e preencher o JSON
-                String[] partes = resultado.split(",");
-                for (String parte : partes) {
-                    String[] chaveValor = parte.split(":");
-                    if (chaveValor[0].trim().equalsIgnoreCase("Tipo")) {
-                        jsonResultado.put("tipo", chaveValor[1].trim().toLowerCase());  // Ex: "entrada"
-                    }
-                    if (chaveValor[0].trim().equalsIgnoreCase("Mes")) {
-                        jsonResultado.put("mes", Integer.parseInt(chaveValor[1].trim()));  // Ex: 4
-                    }
-                }
-
-                // Exibindo o JSON gerado para depuração
-                System.out.println("JSON gerado: " + jsonResultado.toString());
-
-                // Agora podemos continuar o processamento como um JSON válido
-                String tipoString = jsonResultado.getString("tipo");
-                Integer mes = jsonResultado.getInt("mes");
-
-                // Passando o valor de "tipo" para o enum
-                TipoTransacao tipo = TipoTransacao.fromString(tipoString);
-
-                if (tipo != null && mes != null) {
-                    Double valor = repository.somarPorTipoEMes(tipo, mes);
-
-                    String tipoTexto = TextoFinanceiroParser.chavePorValorTipo(tipo);
-                    String mesTexto = TextoFinanceiroParser.chavePorValorMes(mes);
-
-                    if (valor == null || valor == 0.0) {
-                        String artigoNegativo = tipoTexto.matches("(?i)(despesa|receita)") ? "uma" : "um";
-                        return String.format("Não houve %s %s registrado em %s.", artigoNegativo, tipoTexto, mesTexto);
-                    }
-
-                    String artigo = tipoTexto.matches("(?i)(despesa|receita)") ? "A" : "O";
-                    return String.format("%s %s de %s foi R$ %.2f", artigo, tipoTexto, mesTexto, valor);
-                }
-            }
-        } catch (JSONException e) {
-            System.err.println("Erro ao processar a string ou converter para JSON: " + e.getMessage());
-            return "Erro ao processar os dados.";
+        if (valor == null || valor == 0.0) {
+            return String.format("Não houve movimentação do tipo %s no período informado.", tipo.name().toLowerCase());
         }
 
-        return "Desculpe, não entendi a pergunta.";
+        // Extrair os nomes dos meses
+        String mesInicioNome = DataFormatter.nomeMes(dataInicio);
+        String mesFimNome = DataFormatter.nomeMes(dataFim);
+
+
+        if (dataInicio.getMonth() == dataFim.getMonth()) {
+            // Se o mês de início e fim forem o mesmo
+            return String.format(" %s em %s foi de R$ %.2f.",
+                    tipo.name().toLowerCase(), mesInicioNome, valor);
+        } else {
+            // Se forem meses diferentes
+            return String.format(" %s de %s até %s foi de R$ %.2f.",
+                    tipo.name().toLowerCase(), mesInicioNome, mesFimNome, valor);
+        }
+    }
+
+    public String buscarFilialComMaisTransacoes(TipoTransacao tipo) {
+        List<Object[]> resultados = repository.somarTotalPorFilialETipo(tipo);
+        if (resultados.isEmpty()) {
+            return "Nenhuma filial encontrada.";
+        }
+        Object[] melhorResultado = resultados.get(0);
+        String nomeFilial = (String) melhorResultado[0];
+        Double total = (Double) melhorResultado[1];
+        return String.format("A filial com maior %s foi %s com R$ %.2f.",
+                tipo.name().toLowerCase(), nomeFilial, total);
+    }
+
+    public String buscarSomatorioPorTipoDataEFilial(TipoTransacao tipo, LocalDate dataInicio, LocalDate dataFim, String filial) {
+        Double valor = repository.somarValorPorTipoDataEFilial(tipo, dataInicio, dataFim, filial);
+
+        if (valor == null || valor == 0.0) {
+            return String.format("Não houve movimentação do tipo %s para a filial %s no período informado.", tipo.name().toLowerCase(), filial);
+        }
+
+        // Extrair os nomes dos meses em português
+        String mesInicioNome = DataFormatter.nomeMes(dataInicio);
+        String mesFimNome = DataFormatter.nomeMes(dataFim);
+
+
+        if (dataInicio.getMonth() == dataFim.getMonth()) {
+            // Se o mês de início e fim forem o mesmo
+            return String.format("O valor de %s para a %s em %s foi de R$ %.2f.",
+                    tipo.name().toLowerCase(), filial, mesInicioNome, valor);
+        } else {
+            // Se forem meses diferentes
+            return String.format("O valor de %s para a %s de %s até %s foi de R$ %.2f.",
+                    tipo.name().toLowerCase(), filial, mesInicioNome, mesFimNome, valor);
+        }
+    }
+
+
+
+    public List<ResumoFinanceiroDTO> buscarResumoFinanceiro(String filial, Integer mesInicio, Integer mesFim, Integer ano) {
+        return repository.resumoFinanceiroPorFilialEPeriodo(filial, mesInicio, mesFim, ano);
     }
 }
+
