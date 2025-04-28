@@ -19,14 +19,14 @@ public class ExtratorComInstruct {
             - O mês de início ("mesInicio", número 1-12).
             - O mês de fim ("mesFim", número 1-12).
             - A empresa envolvida ("filial").
-            
+        
             Regras para definir "acao":
             - Se a frase mencionar "filial" e "tipo de transação" (entrada, despesa, lucro), responda "consultar_somatorio_transacao_por_filial_tipo_e_intervalo".
             - Se a frase mencionar apenas "tipo de transação", sem filial, responda "consultar_somatorio_transacao_por_tipo_e_intervalo".
             - Se a frase perguntar qual filial teve maior movimentação, responda "consultar_filial_maior_transacao_somatorio_tipo_e_intervalo".
             - Se pedir um resumo de movimentações financeiras por filial, responda "consultar_resumo_financeiro_filial_tipos_e_intervalo".
             - Se não tiver informações suficientes, responda null.
-            
+        
             Regras para determinar o "tipo" de transação:
             - Se a frase mencionar "entrada", o tipo é "entrada".
             - Se a frase mencionar "despesa", o tipo é "despesa".

@@ -109,7 +109,6 @@ public class DispatcherService {
         if (filial == null) {
             return "Informe a filial.";
         }
-
         if (ano == null) {
             ano = Year.now().getValue();
         }
