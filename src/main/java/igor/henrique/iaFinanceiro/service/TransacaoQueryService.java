@@ -1,78 +1,99 @@
 package igor.henrique.iaFinanceiro.service;
 
-import igor.henrique.iaFinanceiro.ai.ExtratorComInstruct;
-import igor.henrique.iaFinanceiro.ai.ResultadoTransacao;
-import igor.henrique.iaFinanceiro.enums.TipoTransacao;
 import igor.henrique.iaFinanceiro.repository.TransacaoRepository;
-import igor.henrique.iaFinanceiro.util.TextoFinanceiroParser;
-import org.json.JSONException;
+import igor.henrique.iaFinanceiro.enums.TipoTransacao;
 import org.springframework.stereotype.Service;
 
-import org.json.JSONObject;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.Year;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TransacaoQueryService {
 
-    private TransacaoRepository repository;
+    private final TransacaoRepository repository;
 
     public TransacaoQueryService(TransacaoRepository repository) {
         this.repository = repository;
     }
 
-    public String interpretarConsulta(String texto) {
-        final String textoLower = texto.toLowerCase();
+    public String faturamentoPorPeriodo(LocalDate dataInicio, LocalDate dataFim) {
+        Double valor = repository.somarValorPorPeriodo(dataInicio, dataFim);
+        if (valor == null || valor == 0.0) {
+            return "Não houve faturamento no período informado.";
+        }
+        return String.format("O faturamento de %s até %s foi de R$ %.2f.", dataInicio, dataFim, valor);
+    }
 
-        // Usando o ChatGPT para extrair os dados (retorna uma string formatada, como "Tipo: entrada, Mes: 4")
-        String resultado = ExtratorComInstruct.dadosTransacao(textoLower);
-        System.out.println("resultado: " + resultado);
+    public String consultarPorEmpresa(String empresa) {
+        List<?> transacoes = repository.findByFilialIgnoreCase(empresa);
+        if (transacoes.isEmpty()) {
+            return "Nenhuma transação encontrada para a empresa " + empresa + ".";
+        }
+        return "Encontradas " + transacoes.size() + " transações para a empresa " + empresa + ".";
+    }
 
+    public String filialComMaisTransacoes() {
+        List<Object[]> resultados = repository.encontrarFilialMaisTransacoes();
+        if (resultados.isEmpty()) {
+            return "Nenhuma filial encontrada.";
+        }
+        Object[] maior = resultados.get(0);
+        String nomeFilial = (String) maior[0];
+        Long quantidade = (Long) maior[1];
+        return String.format("A filial com mais transações foi %s com %d transações.", nomeFilial, quantidade);
+    }
+
+    public String consultarTipoMes(String tipoString, Integer mes) {
         try {
-            // Vamos criar um JSON válido a partir da string formatada "Tipo: entrada, Mes: 4"
-            if (resultado != null && !resultado.isEmpty()) {
-                JSONObject jsonResultado = new JSONObject();
-
-                // Processando a string para extrair os dados e preencher o JSON
-                String[] partes = resultado.split(",");
-                for (String parte : partes) {
-                    String[] chaveValor = parte.split(":");
-                    if (chaveValor[0].trim().equalsIgnoreCase("Tipo")) {
-                        jsonResultado.put("tipo", chaveValor[1].trim().toLowerCase());  // Ex: "entrada"
-                    }
-                    if (chaveValor[0].trim().equalsIgnoreCase("Mes")) {
-                        jsonResultado.put("mes", Integer.parseInt(chaveValor[1].trim()));  // Ex: 4
-                    }
-                }
-
-                // Exibindo o JSON gerado para depuração
-                System.out.println("JSON gerado: " + jsonResultado.toString());
-
-                // Agora podemos continuar o processamento como um JSON válido
-                String tipoString = jsonResultado.getString("tipo");
-                Integer mes = jsonResultado.getInt("mes");
-
-                // Passando o valor de "tipo" para o enum
-                TipoTransacao tipo = TipoTransacao.fromString(tipoString);
-
-                if (tipo != null && mes != null) {
-                    Double valor = repository.somarPorTipoEMes(tipo, mes);
-
-                    String tipoTexto = TextoFinanceiroParser.chavePorValorTipo(tipo);
-                    String mesTexto = TextoFinanceiroParser.chavePorValorMes(mes);
-
-                    if (valor == null || valor == 0.0) {
-                        String artigoNegativo = tipoTexto.matches("(?i)(despesa|receita)") ? "uma" : "um";
-                        return String.format("Não houve %s %s registrado em %s.", artigoNegativo, tipoTexto, mesTexto);
-                    }
-
-                    String artigo = tipoTexto.matches("(?i)(despesa|receita)") ? "A" : "O";
-                    return String.format("%s %s de %s foi R$ %.2f", artigo, tipoTexto, mesTexto, valor);
-                }
+            TipoTransacao tipo = TipoTransacao.valueOf(tipoString.toLowerCase());
+            Double valor = repository.somarPorTipoEMes(tipo, mes);
+            if (valor == null || valor == 0.0) {
+                return String.format("Não houve %s registrada no mês %d.", tipoString, mes);
             }
-        } catch (JSONException e) {
-            System.err.println("Erro ao processar a string ou converter para JSON: " + e.getMessage());
-            return "Erro ao processar os dados.";
+            return String.format("O valor de %s no mês %d foi de R$ %.2f.", tipoString, mes, valor);
+        } catch (IllegalArgumentException e) {
+            return "Tipo de transação inválido.";
+        }
+    }
+
+    public String resumoFinanceiroPorFilial(String filial) {
+        List<Object[]> resultados = repository.somarValoresPorTipoEFilial(filial);
+
+        if (resultados.isEmpty()) {
+            return "Nenhum dado financeiro encontrado para a filial " + filial + ".";
         }
 
-        return "Desculpe, não entendi a pergunta.";
+        double totalEntrada = 0.0;
+        double totalDespesa = 0.0;
+        double totalLucro = 0.0;
+
+        for (Object[] linha : resultados) {
+            String tipoString = linha[0].toString().toLowerCase();
+            Double valor = (Double) linha[1];
+
+            switch (tipoString) {
+                case "entrada":
+                    totalEntrada = valor;
+                    break;
+                case "despesa":
+                    totalDespesa = valor;
+                    break;
+                case "lucro":
+                    totalLucro = valor;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return String.format(
+                "Resumo financeiro da filial %s:\nEntrada: R$ %.2f\nDespesa: R$ %.2f\nLucro: R$ %.2f",
+                filial, totalEntrada, totalDespesa, totalLucro
+        );
     }
+
 }
