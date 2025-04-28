@@ -25,22 +25,16 @@ public class DispatcherService {
         }
 
         switch (interpretacao.getAcao()) {
-            case "consulta_transacoes_por_tipo_intervalo":
+            case "consultar_somatorio_transacao_por_tipo_e_intervalo":
                 return processarConsultaTransacoesPorTipoEIntervalo(interpretacao);
 
-            case "consulta_transacoes_filial_tipo_mes":
+            case "consultar_somatorio_transacao_por_filial_tipo_e_intervalo":
                 return processarConsultaTransacoesPorTipoMesEFilial(interpretacao);
 
-            case "consulta_filial_mais_transacoes":
+            case "consultar_filial_maior_transacao_somatorio_tipo_e_intervalo":
                 return processarConsultaFilialComMaisTransacoes(interpretacao);
 
-            case "consulta_somatorio_tipo_mes":
-                return processarConsultaSomatorioPorTipoEMes(interpretacao);
-
-            case "consulta_resumo_financeiro_filial_intervalo":
-                return processarResumoFinanceiroPorFilialEIntervalo(interpretacao);
-
-            case "resumo_financeiro_filial":
+            case "consultar_resumo_financeiro_filial_tipos_e_intervalo":
                 return processarResumoFinanceiro(interpretacao);
 
             default:
@@ -71,9 +65,11 @@ public class DispatcherService {
         if (interpretacao.getTipo() == null || interpretacao.getMesInicio() == null || interpretacao.getFilial() == null) {
             return "Informe o tipo de transação, o mês e o nome da filial para a consulta.";
         }
-        return transacaoQueryService.buscarSomatorioPorTipoEMes(
+
+        return transacaoQueryService.buscarSomatorioPorTipoMesEFilial(
                 interpretacao.getTipo(),
-                interpretacao.getMesInicio()
+                interpretacao.getMesInicio(),
+                interpretacao.getFilial()
         );
     }
 
@@ -81,66 +77,10 @@ public class DispatcherService {
         if (interpretacao.getTipo() == null) {
             return "Informe o tipo de transação para consultar a filial com mais transações.";
         }
+
         return transacaoQueryService.buscarFilialComMaisTransacoes(
                 TipoTransacao.valueOf(interpretacao.getTipo().toUpperCase())
         );
-    }
-
-    private String processarConsultaSomatorioPorTipoEMes(InterpretacaoTransacao interpretacao) {
-        if (interpretacao.getTipo() == null || interpretacao.getMesInicio() == null) {
-            return "Informe o tipo de transação e o mês para consultar o somatório.";
-        }
-        return transacaoQueryService.buscarSomatorioPorTipoEMes(
-                interpretacao.getTipo(),
-                interpretacao.getMesInicio()
-        );
-    }
-
-    private String processarResumoFinanceiroPorFilialEIntervalo(InterpretacaoTransacao interpretacao) {
-        if (interpretacao.getFilial() == null) {
-            return "Informe o nome da filial para gerar o resumo financeiro.";
-        }
-
-        LocalDate dataInicio = obterDataInicio(interpretacao);
-        LocalDate dataFim = obterDataFim(interpretacao);
-
-        if (dataInicio == null || dataFim == null) {
-            return "Informe as datas de início e fim ou os meses de início e fim.";
-        }
-
-        return transacaoQueryService.resumoFinanceiroPorFilialEIntervalo(
-                interpretacao.getFilial(),
-                dataInicio.getMonthValue(),
-                dataFim.getMonthValue()
-        );
-    }
-
-    /**
-     * Utilitário para obter a data de início a partir do InterpretacaoTransacao
-     */
-    private LocalDate obterDataInicio(InterpretacaoTransacao interpretacao) {
-        if (interpretacao.getDataInicio() != null) {
-            return interpretacao.getDataInicio();
-        } else if (interpretacao.getMesInicio() != null) {
-            int anoAtual = Year.now().getValue();
-            return LocalDate.of(anoAtual, interpretacao.getMesInicio(), 1);
-        }
-        return null;
-    }
-
-    /**
-     * Utilitário para obter a data de fim a partir do InterpretacaoTransacao
-     */
-    private LocalDate obterDataFim(InterpretacaoTransacao interpretacao) {
-        if (interpretacao.getDataFim() != null) {
-            return interpretacao.getDataFim();
-        } else if (interpretacao.getMesFim() != null) {
-            int anoAtual = Year.now().getValue();
-            Month mes = Month.of(interpretacao.getMesFim());
-            int diaFim = mes.length(Year.isLeap(anoAtual));
-            return LocalDate.of(anoAtual, mes, diaFim);
-        }
-        return null;
     }
 
     private String processarResumoFinanceiro(InterpretacaoTransacao interpretacao) {
@@ -149,8 +89,18 @@ public class DispatcherService {
         Integer mesFim = interpretacao.getMesFim();
         Integer ano = interpretacao.getAno();
 
+        if (filial == null) {
+            return "Informe a filial.";
+        }
+
         if (ano == null) {
             ano = Year.now().getValue();
+        }
+
+        // Se mesInicio e mesFim forem nulos, buscar o ano inteiro
+        if (mesInicio == null || mesFim == null) {
+            mesInicio = 1;  // Janeiro
+            mesFim = 12;    // Dezembro
         }
 
         List<ResumoFinanceiroDTO> resumo = transacaoQueryService.buscarResumoFinanceiro(filial, mesInicio, mesFim, ano);
@@ -169,4 +119,26 @@ public class DispatcherService {
         return resposta.toString();
     }
 
+
+    private LocalDate obterDataInicio(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getDataInicio() != null) {
+            return interpretacao.getDataInicio();
+        } else if (interpretacao.getMesInicio() != null) {
+            int anoAtual = Year.now().getValue();
+            return LocalDate.of(anoAtual, interpretacao.getMesInicio(), 1);
+        }
+        return null;
+    }
+
+    private LocalDate obterDataFim(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getDataFim() != null) {
+            return interpretacao.getDataFim();
+        } else if (interpretacao.getMesFim() != null) {
+            int anoAtual = Year.now().getValue();
+            Month mes = Month.of(interpretacao.getMesFim());
+            int diaFim = mes.length(Year.isLeap(anoAtual));
+            return LocalDate.of(anoAtual, mes, diaFim);
+        }
+        return null;
+    }
 }

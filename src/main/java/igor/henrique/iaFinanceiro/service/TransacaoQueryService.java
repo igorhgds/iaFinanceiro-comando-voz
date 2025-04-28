@@ -38,30 +38,21 @@ public class TransacaoQueryService {
                 tipo.name().toLowerCase(), nomeFilial, total);
     }
 
-    public String buscarSomatorioPorTipoEMes(String tipoString, Integer mes) {
+    public String buscarSomatorioPorTipoMesEFilial(String tipoString, Integer mes, String filial) {
         try {
             TipoTransacao tipo = TipoTransacao.valueOf(tipoString.toUpperCase());
-            Double valor = repository.somarValorPorTipoEMes(tipo, mes);
+            Double valor = repository.somarValorPorTipoMesEFilial(tipo, mes, filial);
             if (valor == null || valor == 0.0) {
-                return String.format("Não houve %s registrada no mês %d.", tipoString.toLowerCase(), mes);
+                return String.format("Não houve %s registrada na %s no mês %d.", tipoString.toLowerCase(), filial, mes);
             }
-            return String.format("O valor de %s no mês %d foi de R$ %.2f.", tipoString.toLowerCase(), mes, valor);
+            return String.format("O valor de %s na %s no mês %d foi de R$ %.2f.", tipoString.toLowerCase(), filial, mes, valor);
         } catch (IllegalArgumentException e) {
             return "Tipo de transação inválido: " + tipoString;
         }
     }
 
-    public String resumoFinanceiroPorFilialEIntervalo(String filial, Integer mesInicio, Integer mesFim) {
-        Double total = repository.somarValorPorFilialEMesEntre(filial, mesInicio, mesFim);
-        if (total == null || total == 0.0) {
-            return String.format("Nenhum dado financeiro encontrado para a filial %s no intervalo entre os meses %d e %d.", filial, mesInicio, mesFim);
-        }
-        return String.format("Resumo financeiro da %s entre os meses %d e %d: R$ %.2f.",
-                filial, mesInicio, mesFim, total);
-    }
-
     public List<ResumoFinanceiroDTO> buscarResumoFinanceiro(String filial, Integer mesInicio, Integer mesFim, Integer ano) {
         return repository.resumoFinanceiroPorFilialEPeriodo(filial, mesInicio, mesFim, ano);
     }
-
 }
+

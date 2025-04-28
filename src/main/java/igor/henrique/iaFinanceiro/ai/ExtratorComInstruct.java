@@ -21,16 +21,14 @@ public class ExtratorComInstruct {
             - A empresa envolvida ("filial").
         
             Possíveis valores para "acao":
-            - "ConsultaTransacoesPorTipoEIntervalo"
-            - "consulta_transacoes_filial_tipo_mes"
-            - "consulta_filial_mais_transacoes"
-            - "consulta_somatorio_tipo_mes"
-            - "consulta_resumo_financeiro_filial_intervalo"
-            - "resumo_financeiro_filial"
+            - "consultar_somatorio_transacao_por_tipo_e_intervalo"
+            - "consultar_somatorio_transacao_por_filial_tipo_e_intervalo"
+            - "consultar_filial_maior_transacao_somatorio_tipo_e_intervalo"
+            - "consultar_resumo_financeiro_filial_tipos_e_intervalo"
         
             Responda apenas um JSON, exatamente neste formato:
             {
-              "acao": "consultar_transacoes_intervalo",
+              "acao": "consultar_somatorio_transacao_por_tipo_e_intervalo",
               "tipo": "entrada",
               "mesInicio": 1,
               "mesFim": 5,
@@ -54,7 +52,6 @@ public class ExtratorComInstruct {
         var resposta = service.createCompletion(requisicao);
         String textoResposta = resposta.getChoices().get(0).getText().trim();
 
-        System.out.println("Resposta: " + resposta);
         System.out.println("TextoResposta: " + textoResposta);
 
         try {
