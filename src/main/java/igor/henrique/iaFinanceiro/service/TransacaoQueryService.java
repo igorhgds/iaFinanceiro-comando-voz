@@ -76,5 +76,3 @@ public class TransacaoQueryService {
         return "Desculpe, não entendi a pergunta.";
     }
 }
-
-

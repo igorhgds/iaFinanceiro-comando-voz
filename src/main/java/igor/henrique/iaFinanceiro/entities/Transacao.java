@@ -1,6 +1,8 @@
 package igor.henrique.iaFinanceiro.entities;
 
 import igor.henrique.iaFinanceiro.enums.TipoTransacao;
+import igor.henrique.iaFinanceiro.util.TipoTransacaoConverter;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -23,7 +25,7 @@ public class Transacao {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = TipoTransacaoConverter.class)
     private TipoTransacao tipo;
 
     private String cliente;
