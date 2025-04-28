@@ -1,32 +1,54 @@
 package igor.henrique.iaFinanceiro.repository;
 
+import igor.henrique.iaFinanceiro.dtos.transacao.ResumoFinanceiroDTO;
 import igor.henrique.iaFinanceiro.entities.Transacao;
 import igor.henrique.iaFinanceiro.enums.TipoTransacao;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
 
+@Repository
 public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
 
-    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.data BETWEEN :dataInicio AND :dataFim")
-    Double somarValorPorPeriodo(LocalDate dataInicio, LocalDate dataFim);
+    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.tipo = :tipo AND t.data BETWEEN :dataInicio AND :dataFim")
+    Double somarValorPorTipoEDataEntre(@Param("tipo") TipoTransacao tipo,
+                                       @Param("dataInicio") LocalDate dataInicio,
+                                       @Param("dataFim") LocalDate dataFim);
 
-    List<Transacao> findByFilialIgnoreCase(String filial);
+    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.tipo = :tipo AND EXTRACT(MONTH FROM t.data) = :mes AND t.filial = :filial")
+    Double somarValorPorTipoMesEFilial(@Param("tipo") TipoTransacao tipo,
+                                       @Param("mes") Integer mes,
+                                       @Param("filial") String filial);
 
-    @Query("SELECT t.filial, COUNT(t) FROM Transacao t GROUP BY t.filial ORDER BY COUNT(t) DESC")
-    List<Object[]> encontrarFilialMaisTransacoes();
+    @Query("SELECT t.filial, SUM(t.valor) FROM Transacao t WHERE t.tipo = :tipo GROUP BY t.filial ORDER BY SUM(t.valor) DESC")
+    List<Object[]> somarTotalPorFilialETipo(@Param("tipo") TipoTransacao tipo);
 
-    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.tipo = :tipo AND FUNCTION('MONTH', t.data) = :mes")
-    Double somarPorTipoEMes(TipoTransacao tipo, int mes);
+    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.tipo = :tipo AND EXTRACT(MONTH FROM t.data) = :mes")
+    Double somarValorPorTipoEMes(@Param("tipo") TipoTransacao tipo,
+                                 @Param("mes") Integer mes);
+
+    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.filial = :filial AND EXTRACT(MONTH FROM t.data) BETWEEN :mesInicio AND :mesFim")
+    Double somarValorPorFilialEMesEntre(@Param("filial") String filial,
+                                        @Param("mesInicio") Integer mesInicio,
+                                        @Param("mesFim") Integer mesFim);
 
     @Query("""
-    SELECT t.tipo, SUM(t.valor) 
-    FROM Transacao t 
-    WHERE LOWER(t.filial) = LOWER(:filial)
+    SELECT new igor.henrique.iaFinanceiro.dtos.transacao.ResumoFinanceiroDTO(t.tipo, SUM(t.valor))
+    FROM Transacao t
+    WHERE t.filial = :filial
+      AND EXTRACT(MONTH FROM t.data) BETWEEN :mesInicio AND :mesFim
+      AND EXTRACT(YEAR FROM t.data) = :ano
     GROUP BY t.tipo
+    ORDER BY t.tipo
 """)
-    List<Object[]> somarValoresPorTipoEFilial(String filial);
+    List<ResumoFinanceiroDTO> resumoFinanceiroPorFilialEPeriodo(@Param("filial") String filial,
+                                                                @Param("mesInicio") Integer mesInicio,
+                                                                @Param("mesFim") Integer mesFim,
+                                                                @Param("ano") Integer ano);
+
 
 }

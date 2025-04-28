@@ -1,15 +1,12 @@
 package igor.henrique.iaFinanceiro.service;
 
-import igor.henrique.iaFinanceiro.repository.TransacaoRepository;
+import igor.henrique.iaFinanceiro.dtos.transacao.ResumoFinanceiroDTO;
 import igor.henrique.iaFinanceiro.enums.TipoTransacao;
+import igor.henrique.iaFinanceiro.repository.TransacaoRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.Month;
-import java.time.Year;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TransacaoQueryService {
@@ -20,80 +17,51 @@ public class TransacaoQueryService {
         this.repository = repository;
     }
 
-    public String faturamentoPorPeriodo(LocalDate dataInicio, LocalDate dataFim) {
-        Double valor = repository.somarValorPorPeriodo(dataInicio, dataFim);
+    public String faturamentoPorTipoEData(TipoTransacao tipo, LocalDate dataInicio, LocalDate dataFim) {
+        Double valor = repository.somarValorPorTipoEDataEntre(tipo, dataInicio, dataFim);
         if (valor == null || valor == 0.0) {
-            return "Não houve faturamento no período informado.";
+            return String.format("Não houve movimentação do tipo %s no período informado.", tipo.name().toLowerCase());
         }
-        return String.format("O faturamento de %s até %s foi de R$ %.2f.", dataInicio, dataFim, valor);
+        return String.format("O faturamento de %s de %s até %s foi de R$ %.2f.",
+                tipo.name().toLowerCase(), dataInicio, dataFim, valor);
     }
 
-    public String consultarPorEmpresa(String empresa) {
-        List<?> transacoes = repository.findByFilialIgnoreCase(empresa);
-        if (transacoes.isEmpty()) {
-            return "Nenhuma transação encontrada para a empresa " + empresa + ".";
-        }
-        return "Encontradas " + transacoes.size() + " transações para a empresa " + empresa + ".";
-    }
-
-    public String filialComMaisTransacoes() {
-        List<Object[]> resultados = repository.encontrarFilialMaisTransacoes();
+    public String buscarFilialComMaisTransacoes(TipoTransacao tipo) {
+        List<Object[]> resultados = repository.somarTotalPorFilialETipo(tipo);
         if (resultados.isEmpty()) {
             return "Nenhuma filial encontrada.";
         }
-        Object[] maior = resultados.get(0);
-        String nomeFilial = (String) maior[0];
-        Long quantidade = (Long) maior[1];
-        return String.format("A filial com mais transações foi %s com %d transações.", nomeFilial, quantidade);
+        Object[] melhorResultado = resultados.get(0);
+        String nomeFilial = (String) melhorResultado[0];
+        Double total = (Double) melhorResultado[1];
+        return String.format("A filial com maior %s foi %s com R$ %.2f.",
+                tipo.name().toLowerCase(), nomeFilial, total);
     }
 
-    public String consultarTipoMes(String tipoString, Integer mes) {
+    public String buscarSomatorioPorTipoEMes(String tipoString, Integer mes) {
         try {
-            TipoTransacao tipo = TipoTransacao.valueOf(tipoString.toLowerCase());
-            Double valor = repository.somarPorTipoEMes(tipo, mes);
+            TipoTransacao tipo = TipoTransacao.valueOf(tipoString.toUpperCase());
+            Double valor = repository.somarValorPorTipoEMes(tipo, mes);
             if (valor == null || valor == 0.0) {
-                return String.format("Não houve %s registrada no mês %d.", tipoString, mes);
+                return String.format("Não houve %s registrada no mês %d.", tipoString.toLowerCase(), mes);
             }
-            return String.format("O valor de %s no mês %d foi de R$ %.2f.", tipoString, mes, valor);
+            return String.format("O valor de %s no mês %d foi de R$ %.2f.", tipoString.toLowerCase(), mes, valor);
         } catch (IllegalArgumentException e) {
-            return "Tipo de transação inválido.";
+            return "Tipo de transação inválido: " + tipoString;
         }
     }
 
-    public String resumoFinanceiroPorFilial(String filial) {
-        List<Object[]> resultados = repository.somarValoresPorTipoEFilial(filial);
-
-        if (resultados.isEmpty()) {
-            return "Nenhum dado financeiro encontrado para a filial " + filial + ".";
+    public String resumoFinanceiroPorFilialEIntervalo(String filial, Integer mesInicio, Integer mesFim) {
+        Double total = repository.somarValorPorFilialEMesEntre(filial, mesInicio, mesFim);
+        if (total == null || total == 0.0) {
+            return String.format("Nenhum dado financeiro encontrado para a filial %s no intervalo entre os meses %d e %d.", filial, mesInicio, mesFim);
         }
+        return String.format("Resumo financeiro da %s entre os meses %d e %d: R$ %.2f.",
+                filial, mesInicio, mesFim, total);
+    }
 
-        double totalEntrada = 0.0;
-        double totalDespesa = 0.0;
-        double totalLucro = 0.0;
-
-        for (Object[] linha : resultados) {
-            String tipoString = linha[0].toString().toLowerCase();
-            Double valor = (Double) linha[1];
-
-            switch (tipoString) {
-                case "entrada":
-                    totalEntrada = valor;
-                    break;
-                case "despesa":
-                    totalDespesa = valor;
-                    break;
-                case "lucro":
-                    totalLucro = valor;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        return String.format(
-                "Resumo financeiro da filial %s:\nEntrada: R$ %.2f\nDespesa: R$ %.2f\nLucro: R$ %.2f",
-                filial, totalEntrada, totalDespesa, totalLucro
-        );
+    public List<ResumoFinanceiroDTO> buscarResumoFinanceiro(String filial, Integer mesInicio, Integer mesFim, Integer ano) {
+        return repository.resumoFinanceiroPorFilialEPeriodo(filial, mesInicio, mesFim, ano);
     }
 
 }

@@ -21,11 +21,12 @@ public class ExtratorComInstruct {
             - A empresa envolvida ("filial").
         
             Possíveis valores para "acao":
-            - "consultar_transacoes_intervalo"
-            - "consultar_transacoes_filial"
-            - "consultar_filial_mais_transacoes"
-            - "consultar_somatorio_tipo_mes"
-            - "consultar_resumo_financeiro_filial"
+            - "ConsultaTransacoesPorTipoEIntervalo"
+            - "consulta_transacoes_filial_tipo_mes"
+            - "consulta_filial_mais_transacoes"
+            - "consulta_somatorio_tipo_mes"
+            - "consulta_resumo_financeiro_filial_intervalo"
+            - "resumo_financeiro_filial"
         
             Responda apenas um JSON, exatamente neste formato:
             {
@@ -64,7 +65,7 @@ public class ExtratorComInstruct {
             resultado.setTipo(jsonResposta.optString("tipo", null));
             resultado.setMesInicio(jsonResposta.has("mesInicio") && !jsonResposta.isNull("mesInicio") ? jsonResposta.getInt("mesInicio") : null);
             resultado.setMesFim(jsonResposta.has("mesFim") && !jsonResposta.isNull("mesFim") ? jsonResposta.getInt("mesFim") : null);
-            resultado.setEmpresa(jsonResposta.optString("filial", null)); // corrigido aqui
+            resultado.setFilial(jsonResposta.optString("filial", null)); // corrigido aqui
 
             return resultado;
 

@@ -1,11 +1,14 @@
 package igor.henrique.iaFinanceiro.service;
 
 import igor.henrique.iaFinanceiro.dtos.transacao.InterpretacaoTransacao;
+import igor.henrique.iaFinanceiro.dtos.transacao.ResumoFinanceiroDTO;
+import igor.henrique.iaFinanceiro.enums.TipoTransacao;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.Year;
+import java.util.List;
 
 @Service
 public class DispatcherService {
@@ -22,53 +25,148 @@ public class DispatcherService {
         }
 
         switch (interpretacao.getAcao()) {
-            case "consultar_transacoes_intervalo":
-                return processarConsultaIntervalo(interpretacao);
+            case "consulta_transacoes_por_tipo_intervalo":
+                return processarConsultaTransacoesPorTipoEIntervalo(interpretacao);
 
-            case "consultar_transacoes_filial":
-                return processarConsultaFilial(interpretacao);
+            case "consulta_transacoes_filial_tipo_mes":
+                return processarConsultaTransacoesPorTipoMesEFilial(interpretacao);
 
-            case "consultar_filial_mais_transacoes":
-                return transacaoQueryService.filialComMaisTransacoes();
+            case "consulta_filial_mais_transacoes":
+                return processarConsultaFilialComMaisTransacoes(interpretacao);
 
-            case "consultar_somatorio_tipo_mes":
-                return processarConsultaTipoMes(interpretacao);
+            case "consulta_somatorio_tipo_mes":
+                return processarConsultaSomatorioPorTipoEMes(interpretacao);
 
-            case "consultar_resumo_financeiro_filial":
-                return processarResumoFinanceiroFilial(interpretacao);
+            case "consulta_resumo_financeiro_filial_intervalo":
+                return processarResumoFinanceiroPorFilialEIntervalo(interpretacao);
+
+            case "resumo_financeiro_filial":
+                return processarResumoFinanceiro(interpretacao);
 
             default:
-                return "Não entendi a ação solicitada.";
+                return "Ação não reconhecida: " + interpretacao.getAcao();
         }
     }
 
-    private String processarConsultaIntervalo(InterpretacaoTransacao interpretacao) {
-        if (interpretacao.getMesInicio() == null || interpretacao.getMesFim() == null) {
-            return "Informe o mês de início e o mês de fim para a consulta.";
+    private String processarConsultaTransacoesPorTipoEIntervalo(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getTipo() == null) {
+            return "Informe o tipo de transação para a consulta.";
         }
-        LocalDate dataInicio = LocalDate.of(Year.now().getValue(), interpretacao.getMesInicio(), 1);
-        LocalDate dataFim = LocalDate.of(Year.now().getValue(), interpretacao.getMesFim(), Month.of(interpretacao.getMesFim()).length(Year.now().isLeap()));
-        return transacaoQueryService.faturamentoPorPeriodo(dataInicio, dataFim);
+
+        LocalDate dataInicio = obterDataInicio(interpretacao);
+        LocalDate dataFim = obterDataFim(interpretacao);
+
+        if (dataInicio == null || dataFim == null) {
+            return "Informe as datas de início e fim ou os meses de início e fim.";
+        }
+
+        return transacaoQueryService.faturamentoPorTipoEData(
+                TipoTransacao.valueOf(interpretacao.getTipo().toUpperCase()),
+                dataInicio,
+                dataFim
+        );
     }
 
-    private String processarConsultaFilial(InterpretacaoTransacao interpretacao) {
-        if (interpretacao.getEmpresa() == null || interpretacao.getEmpresa().isBlank()) {
-            return "Informe o nome da filial para a consulta.";
+    private String processarConsultaTransacoesPorTipoMesEFilial(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getTipo() == null || interpretacao.getMesInicio() == null || interpretacao.getFilial() == null) {
+            return "Informe o tipo de transação, o mês e o nome da filial para a consulta.";
         }
-        return transacaoQueryService.consultarPorEmpresa(interpretacao.getEmpresa());
+        return transacaoQueryService.buscarSomatorioPorTipoEMes(
+                interpretacao.getTipo(),
+                interpretacao.getMesInicio()
+        );
     }
 
-    private String processarConsultaTipoMes(InterpretacaoTransacao interpretacao) {
+    private String processarConsultaFilialComMaisTransacoes(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getTipo() == null) {
+            return "Informe o tipo de transação para consultar a filial com mais transações.";
+        }
+        return transacaoQueryService.buscarFilialComMaisTransacoes(
+                TipoTransacao.valueOf(interpretacao.getTipo().toUpperCase())
+        );
+    }
+
+    private String processarConsultaSomatorioPorTipoEMes(InterpretacaoTransacao interpretacao) {
         if (interpretacao.getTipo() == null || interpretacao.getMesInicio() == null) {
-            return "Informe o tipo de transação e o mês para a consulta.";
+            return "Informe o tipo de transação e o mês para consultar o somatório.";
         }
-        return transacaoQueryService.consultarTipoMes(interpretacao.getTipo(), interpretacao.getMesInicio());
+        return transacaoQueryService.buscarSomatorioPorTipoEMes(
+                interpretacao.getTipo(),
+                interpretacao.getMesInicio()
+        );
     }
 
-    private String processarResumoFinanceiroFilial(InterpretacaoTransacao interpretacao) {
-        if (interpretacao.getEmpresa() == null || interpretacao.getEmpresa().isBlank()) {
+    private String processarResumoFinanceiroPorFilialEIntervalo(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getFilial() == null) {
             return "Informe o nome da filial para gerar o resumo financeiro.";
         }
-        return transacaoQueryService.resumoFinanceiroPorFilial(interpretacao.getEmpresa());
+
+        LocalDate dataInicio = obterDataInicio(interpretacao);
+        LocalDate dataFim = obterDataFim(interpretacao);
+
+        if (dataInicio == null || dataFim == null) {
+            return "Informe as datas de início e fim ou os meses de início e fim.";
+        }
+
+        return transacaoQueryService.resumoFinanceiroPorFilialEIntervalo(
+                interpretacao.getFilial(),
+                dataInicio.getMonthValue(),
+                dataFim.getMonthValue()
+        );
     }
+
+    /**
+     * Utilitário para obter a data de início a partir do InterpretacaoTransacao
+     */
+    private LocalDate obterDataInicio(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getDataInicio() != null) {
+            return interpretacao.getDataInicio();
+        } else if (interpretacao.getMesInicio() != null) {
+            int anoAtual = Year.now().getValue();
+            return LocalDate.of(anoAtual, interpretacao.getMesInicio(), 1);
+        }
+        return null;
+    }
+
+    /**
+     * Utilitário para obter a data de fim a partir do InterpretacaoTransacao
+     */
+    private LocalDate obterDataFim(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getDataFim() != null) {
+            return interpretacao.getDataFim();
+        } else if (interpretacao.getMesFim() != null) {
+            int anoAtual = Year.now().getValue();
+            Month mes = Month.of(interpretacao.getMesFim());
+            int diaFim = mes.length(Year.isLeap(anoAtual));
+            return LocalDate.of(anoAtual, mes, diaFim);
+        }
+        return null;
+    }
+
+    private String processarResumoFinanceiro(InterpretacaoTransacao interpretacao) {
+        String filial = interpretacao.getFilial();
+        Integer mesInicio = interpretacao.getMesInicio();
+        Integer mesFim = interpretacao.getMesFim();
+        Integer ano = interpretacao.getAno();
+
+        if (ano == null) {
+            ano = Year.now().getValue();
+        }
+
+        List<ResumoFinanceiroDTO> resumo = transacaoQueryService.buscarResumoFinanceiro(filial, mesInicio, mesFim, ano);
+
+        if (resumo.isEmpty()) {
+            return "Nenhuma transação encontrada para a " + filial + " no período solicitado.";
+        }
+
+        StringBuilder resposta = new StringBuilder("Resumo financeiro da " + filial + ":\n");
+        for (ResumoFinanceiroDTO dto : resumo) {
+            resposta.append("- ").append(dto.getTipo())
+                    .append(": R$ ").append(String.format("%.2f", dto.getTotal()))
+                    .append("\n");
+        }
+
+        return resposta.toString();
+    }
+
 }
