@@ -29,7 +29,7 @@ public class DispatcherService {
                 return processarConsultaTransacoesPorTipoEIntervalo(interpretacao);
 
             case "consultar_somatorio_transacao_por_filial_tipo_e_intervalo":
-                return processarConsultaTransacoesPorTipoMesEFilial(interpretacao);
+                return processarConsultaTransacoesPorTipoDataEFilial(interpretacao);
 
             case "consultar_filial_maior_transacao_somatorio_tipo_e_intervalo":
                 return processarConsultaFilialComMaisTransacoes(interpretacao);
@@ -61,17 +61,34 @@ public class DispatcherService {
         );
     }
 
-    private String processarConsultaTransacoesPorTipoMesEFilial(InterpretacaoTransacao interpretacao) {
-        if (interpretacao.getTipo() == null || interpretacao.getMesInicio() == null || interpretacao.getFilial() == null) {
-            return "Informe o tipo de transação, o mês e o nome da filial para a consulta.";
+    private String processarConsultaTransacoesPorTipoDataEFilial(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getTipo() == null || interpretacao.getFilial() == null) {
+            return "Informe o tipo de transação e a filial para a consulta.";
         }
 
-        return transacaoQueryService.buscarSomatorioPorTipoMesEFilial(
-                interpretacao.getTipo(),
-                interpretacao.getMesInicio(),
+        LocalDate dataInicio = obterDataInicio(interpretacao);
+        LocalDate dataFim = obterDataFim(interpretacao);
+
+        if (dataInicio == null || dataFim == null) {
+            return "Informe a data de início e a data de fim ou os meses de início e fim.";
+        }
+
+        TipoTransacao tipoTransacao;
+        try {
+            tipoTransacao = TipoTransacao.valueOf(interpretacao.getTipo().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return "Tipo de transação inválido: " + interpretacao.getTipo();
+        }
+
+        return transacaoQueryService.buscarSomatorioPorTipoDataEFilial(
+                tipoTransacao,
+                dataInicio,
+                dataFim,
                 interpretacao.getFilial()
         );
     }
+
+
 
     private String processarConsultaFilialComMaisTransacoes(InterpretacaoTransacao interpretacao) {
         if (interpretacao.getTipo() == null) {

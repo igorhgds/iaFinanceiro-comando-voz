@@ -24,16 +24,11 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
                                        @Param("dataInicio") LocalDate dataInicio,
                                        @Param("dataFim") LocalDate dataFim);
 
-    @Query("""
-        SELECT SUM(t.valor)
-        FROM Transacao t
-        WHERE t.tipo = :tipo
-          AND EXTRACT(MONTH FROM t.data) = :mes
-          AND t.filial = :filial
-    """)
-    Double somarValorPorTipoMesEFilial(@Param("tipo") TipoTransacao tipo,
-                                       @Param("mes") Integer mes,
-                                       @Param("filial") String filial);
+    @Query("SELECT SUM(t.valor) FROM Transacao t WHERE t.tipo = :tipo AND t.data BETWEEN :dataInicio AND :dataFim AND t.filial = :filial")
+    Double somarValorPorTipoDataEFilial(@Param("tipo") TipoTransacao tipo,
+                                        @Param("dataInicio") LocalDate dataInicio,
+                                        @Param("dataFim") LocalDate dataFim,
+                                        @Param("filial") String filial);
 
     @Query("""
         SELECT t.filial, SUM(t.valor)
