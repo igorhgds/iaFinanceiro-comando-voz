@@ -1,0 +1,50 @@
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    font-family: Poppins, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+main {
+    gap: 1rem;
+    border-radius: 10px;
+    display: flex;
+    box-shadow: 0px 0px 25px 0px rgba(0, 0, 0, 0.25);
+}
+
+section {
+    padding: 2.5rem;
+    width: 50%;
+    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    text-align: justify;
+}
+
+.other {
+    background: url("./img/fundo.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-radius: 0px 10px 10px 0px;
+}
+
+button {
+    width: min-content;
+    padding: 10px 15px;
+    border-radius: 360px;
+    border: 0;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+#texto,
+#resposta {
+    font-size: 20px;
+}

@@ -39,7 +39,7 @@ public class ExtratorComInstruct {
               "tipo": "entrada",
               "mesInicio": 1,
               "mesFim": 5,
-              "filial": "Filial 1"
+              "filial": "Filial 1" 
             }
         
             Se algum valor não for mencionado, use null.
