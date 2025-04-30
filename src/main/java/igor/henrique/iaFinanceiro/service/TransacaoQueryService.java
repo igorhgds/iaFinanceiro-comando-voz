@@ -57,7 +57,7 @@ public class TransacaoQueryService {
         Double valor = repository.somarValorPorTipoDataEFilial(tipo, dataInicio, dataFim, filial);
 
         if (valor == null || valor == 0.0) {
-            return String.format("Não houve movimentação do tipo %s para a filial %s no período informado.", tipo.name().toLowerCase(), filial);
+            return String.format("Não houve movimentação do tipo %s para a %s no período informado.", tipo.name().toLowerCase(), filial);
         }
 
         // Extrair os nomes dos meses em português
