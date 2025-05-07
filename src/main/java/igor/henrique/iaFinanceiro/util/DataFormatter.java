@@ -6,17 +6,16 @@ import java.util.Locale;
 
 public class DataFormatter {
 
+    private static final String[] NOMES_MESES = {
+            "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+            "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+    };
+
     public static String nomeMes(LocalDate data) {
-        if (data == null) {
-            return "";
-        }
-        return data.getMonth().getDisplayName(TextStyle.FULL, new Locale("pt", "BR"));
+        return NOMES_MESES[data.getMonthValue() - 1];
     }
 
-    public static boolean mesmoMes(LocalDate dataInicio, LocalDate dataFim) {
-        if (dataInicio == null || dataFim == null) {
-            return false;
-        }
-        return dataInicio.getMonth() == dataFim.getMonth();
+    public static String formatarData(LocalDate data) {
+        return data.getDayOfMonth() + " de " + nomeMes(data) + " de " + data.getYear();
     }
 }

@@ -52,5 +52,38 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long> {
                                                                 @Param("mesInicio") Integer mesInicio,
                                                                 @Param("mesFim") Integer mesFim,
                                                                 @Param("ano") Integer ano);
+
+    @Query("""
+    SELECT t FROM Transacao t
+    WHERE t.filial = :filial
+      AND t.data BETWEEN :inicio AND :fim
+    ORDER BY t.data ASC
+""")
+    List<Transacao> findByFilialAndDataBetween(@Param("filial") String filial,
+                                               @Param("inicio") LocalDate inicio,
+                                               @Param("fim") LocalDate fim);
+
+    @Query("""
+    SELECT t.filial, SUM(t.valor)
+    FROM Transacao t
+    WHERE t.tipo = :tipo
+      AND t.data BETWEEN :inicio AND :fim
+    GROUP BY t.filial
+    ORDER BY SUM(t.valor) DESC
+""")
+    List<Object[]> somarPorTipoAgrupadoPorFilial(@Param("tipo") TipoTransacao tipo,
+                                                 @Param("inicio") LocalDate inicio,
+                                                 @Param("fim") LocalDate fim);
+
+    @Query("""
+    SELECT SUM(t.valor)
+    FROM Transacao t
+    WHERE t.tipo = :tipo
+      AND t.data BETWEEN :inicio AND :fim
+""")
+    Double somarTotalPorTipoEPeriodo(@Param("tipo") TipoTransacao tipo,
+                                     @Param("inicio") LocalDate inicio,
+                                     @Param("fim") LocalDate fim);
+
 }
 

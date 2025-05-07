@@ -1,5 +1,6 @@
 package igor.henrique.iaFinanceiro.service;
 
+import igor.henrique.iaFinanceiro.ai.ExtratorComInstruct;
 import igor.henrique.iaFinanceiro.dtos.transacao.InterpretacaoTransacao;
 import igor.henrique.iaFinanceiro.dtos.transacao.ResumoFinanceiroDTO;
 import igor.henrique.iaFinanceiro.enums.TipoTransacao;
@@ -14,12 +15,16 @@ import java.util.List;
 public class DispatcherService {
 
     private final TransacaoQueryService transacaoQueryService;
+    private final ExtratorComInstruct extratorComInstruct;
 
-    public DispatcherService(TransacaoQueryService transacaoQueryService) {
+    public DispatcherService(TransacaoQueryService transacaoQueryService, ExtratorComInstruct extratorComInstruct) {
         this.transacaoQueryService = transacaoQueryService;
+        this.extratorComInstruct = extratorComInstruct;
     }
 
-    public String processarConsulta(InterpretacaoTransacao interpretacao) {
+    public String processarConsulta(String texto) {
+        InterpretacaoTransacao interpretacao = extratorComInstruct.dadosTransacao(texto);
+
         if (interpretacao == null || interpretacao.getAcao() == null) {
             return "Não entendi sua solicitação.";
         }
@@ -37,9 +42,19 @@ public class DispatcherService {
             case "consultar_resumo_financeiro_filial_tipos_e_intervalo":
                 return processarResumoFinanceiro(interpretacao);
 
+            case "consultar_transacoes_detalhadas_por_filial_e_periodo":
+                return processarTransacoesDetalhadasPorFilial(interpretacao);
+
+            case "consultar_comparativo_entre_filiais_por_tipo_e_periodo":
+                return processarComparativoFiliais(interpretacao);
+
+            case "consultar_total_geral_por_tipo_e_periodo":
+                return processarTotalGeralPorTipo(interpretacao);
+
             default:
                 return "Ação não reconhecida: " + interpretacao.getAcao();
         }
+
     }
 
     private String processarConsultaTransacoesPorTipoEIntervalo(InterpretacaoTransacao interpretacao) {
@@ -88,8 +103,6 @@ public class DispatcherService {
         );
     }
 
-
-
     private String processarConsultaFilialComMaisTransacoes(InterpretacaoTransacao interpretacao) {
         if (interpretacao.getTipo() == null) {
             return "Informe o tipo de transação para consultar a filial com mais transações.";
@@ -113,10 +126,9 @@ public class DispatcherService {
             ano = Year.now().getValue();
         }
 
-        // Se mesInicio e mesFim forem nulos, buscar o ano inteiro
         if (mesInicio == null || mesFim == null) {
-            mesInicio = 1;  // Janeiro
-            mesFim = 12;    // Dezembro
+            mesInicio = 1;
+            mesFim = 12;
         }
 
         List<ResumoFinanceiroDTO> resumo = transacaoQueryService.buscarResumoFinanceiro(filial, mesInicio, mesFim, ano);
@@ -133,6 +145,35 @@ public class DispatcherService {
         }
 
         return resposta.toString();
+    }
+
+    private String processarTransacoesDetalhadasPorFilial(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getFilial() == null) return "Informe a filial.";
+        LocalDate dataInicio = obterDataInicio(interpretacao);
+        LocalDate dataFim = obterDataFim(interpretacao);
+        if (dataInicio == null || dataFim == null) return "Informe o período.";
+
+        return transacaoQueryService.listarTransacoesPorFilialEPeriodo(interpretacao.getFilial(), dataInicio, dataFim);
+    }
+
+    private String processarComparativoFiliais(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getTipo() == null) return "Informe o tipo de transação.";
+        LocalDate dataInicio = obterDataInicio(interpretacao);
+        LocalDate dataFim = obterDataFim(interpretacao);
+        if (dataInicio == null || dataFim == null) return "Informe o período.";
+
+        return transacaoQueryService.compararFiliaisPorTipo(
+                TipoTransacao.valueOf(interpretacao.getTipo().toUpperCase()), dataInicio, dataFim);
+    }
+
+    private String processarTotalGeralPorTipo(InterpretacaoTransacao interpretacao) {
+        if (interpretacao.getTipo() == null) return "Informe o tipo de transação.";
+        LocalDate dataInicio = obterDataInicio(interpretacao);
+        LocalDate dataFim = obterDataFim(interpretacao);
+        if (dataInicio == null || dataFim == null) return "Informe o período.";
+
+        return transacaoQueryService.totalGeralPorTipo(
+                TipoTransacao.valueOf(interpretacao.getTipo().toUpperCase()), dataInicio, dataFim);
     }
 
 

@@ -20,6 +20,6 @@ public class TipoTransacaoConverter implements AttributeConverter<TipoTransacao,
         if (dbData == null) {
             return null;
         }
-        return TipoTransacao.fromString(dbData);  // usa seu metodo de conversão já existente
+        return TipoTransacao.fromString(dbData);
     }
 }
