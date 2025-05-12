@@ -12,7 +12,7 @@ public class TipoTransacaoConverter implements AttributeConverter<TipoTransacao,
         if (attribute == null) {
             return null;
         }
-        return attribute.name().toLowerCase();  // salva em minúsculo
+        return attribute.name().toLowerCase();
     }
 
     @Override

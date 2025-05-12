@@ -26,7 +26,6 @@ public class TransacaoQueryService {
             return String.format("Não houve movimentação do tipo %s no período informado.", tipo.name().toLowerCase());
         }
 
-        // Extrair os nomes dos meses
         String mesInicioNome = DataFormatter.nomeMes(dataInicio);
         String mesFimNome = DataFormatter.nomeMes(dataFim);
 
@@ -59,10 +58,8 @@ public class TransacaoQueryService {
             return String.format("Não houve movimentação do tipo %s para a %s no período informado.", tipo.name().toLowerCase(), filial);
         }
 
-        // Extrair os nomes dos meses em português
         String mesInicioNome = DataFormatter.nomeMes(dataInicio);
         String mesFimNome = DataFormatter.nomeMes(dataFim);
-
 
         if (dataInicio.getMonth() == dataFim.getMonth()) {
             return String.format("O valor de %s para a %s em %s foi de R$ %.2f.",
